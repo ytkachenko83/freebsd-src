@@ -25,6 +25,7 @@ ATF_TESTS_C+=	getdirentries_test
 ATF_TESTS_C+=	jail_lookup_root
 ATF_TESTS_C+=	jail_thread
 ATF_TESTS_C+=	jaildesc
+ATF_TESTS_C+=	jail_jid_index
 ATF_TESTS_C+=	inotify_test
 ATF_TESTS_C+=	kill_zombie
 .if ${MK_OPENSSL} != "no"
@@ -85,6 +86,7 @@ TEST_METADATA.sigsys+=	is_exclusive="true"
 
 ATF_TESTS_SH+=	coredump_phnum_test
 ATF_TESTS_SH+=	logsigexit_test
+TEST_METADATA.jail_jid_index+=	is_exclusive="true"
 ATF_TESTS_SH+=	jailmeta
 ATF_TESTS_SH+=	sonewconn_overflow
 TEST_METADATA.sonewconn_overflow+=	required_programs="python"
@@ -105,6 +107,7 @@ LIBADD.aslr+=				util
 LIBADD.copy_file_range+=		md
 LIBADD.jail_lookup_root+=		jail util
 LIBADD.jail_thread+=			jail pthread
+LIBADD.jail_jid_index+=			jail util
 LIBADD.jaildesc+=			kvm pthread
 LIBADD.ssl_sendfile+=			pthread crypto ssl
 CFLAGS.sys_getrandom+=			-I${SRCTOP}/sys/contrib/zstd/lib
