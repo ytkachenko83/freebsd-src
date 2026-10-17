@@ -85,6 +85,8 @@ TEST_METADATA.sigsys+=	is_exclusive="true"
 
 ATF_TESTS_SH+=	coredump_phnum_test
 ATF_TESTS_SH+=	logsigexit_test
+ATF_TESTS_SH+=	jail_jid_index
+TEST_METADATA.jail_jid_index+=	is_exclusive="true"
 ATF_TESTS_SH+=	jailmeta
 ATF_TESTS_SH+=	sonewconn_overflow
 TEST_METADATA.sonewconn_overflow+=	required_programs="python"
@@ -92,6 +94,9 @@ TEST_METADATA.sonewconn_overflow+=	required_user="root"
 TEST_METADATA.sonewconn_overflow+=	is_exclusive="true"
 ATF_TESTS_SH+=	sendfile_test
 ATF_TESTS_SH+=	sysctl_security_jail_children
+
+${PACKAGE}FILES+=	jail_jid_index.py
+${PACKAGE}FILESMODE_jail_jid_index.py=0555
 
 ${PACKAGE}FILES+=	sonewconn_overflow.py
 ${PACKAGE}FILESMODE_sonewconn_overflow.py=0555

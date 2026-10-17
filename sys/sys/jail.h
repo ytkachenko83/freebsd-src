@@ -235,6 +235,7 @@ MALLOC_DECLARE(M_PRISON);
 #if defined(_KERNEL) || defined(_WANT_PRISON)
 
 #include <sys/osd.h>
+#include <sys/tree.h>
 
 #define	HOSTUUIDLEN	64
 #define	DEFAULT_HOSTUUID	"00000000-0000-0000-0000-000000000000"
@@ -274,6 +275,7 @@ typedef enum {
  */
 struct prison {
 	TAILQ_ENTRY(prison) pr_list;			/* (a) all prisons */
+	RB_ENTRY(prison) pr_jidlink;			/* (a) JID index */
 	int		 pr_id;				/* (c) prison id */
 	volatile u_int	 pr_ref;			/* (r) refcount */
 	volatile u_int	 pr_uref;			/* (r) user (alive) refcount */

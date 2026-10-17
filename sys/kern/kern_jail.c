@@ -147,13 +147,22 @@ struct jailsys_flags {
  */
 TASKQUEUE_DEFINE_THREAD(jail_remove);
 
-/* allprison, allprison_racct and lastprid are protected by allprison_lock. */
+/* The prison lists, JID index and ID cursors use allprison_lock. */
 struct	sx allprison_lock;
 SX_SYSINIT(allprison_lock, &allprison_lock, "allprison");
 struct	prisonlist allprison = TAILQ_HEAD_INITIALIZER(allprison);
+static RB_HEAD(prison_jid_tree, prison) prison_jids =
+	RB_INITIALIZER(&prison_jids);
 LIST_HEAD(, prison_racct) allprison_racct;
 int	lastprid = 0;
 int	lastdeadid = 0;
+
+static int prison_jid_cmp(const struct prison *a, const struct prison *b);
+static void prison_jid_insert(struct prison *pr);
+static void prison_jid_remove(struct prison *pr);
+static struct prison * prison_lookup(int prid);
+static struct prison * prison_lookup_gt(int prid);
+RB_GENERATE_STATIC(prison_jid_tree, prison, pr_jidlink, prison_jid_cmp);
 
 static int get_next_prid(struct prison **insprp);
 static int get_next_deadid(struct prison **insprp);
@@ -280,6 +289,77 @@ static int jail_default_devfs_rsnum = JAIL_DEFAULT_DEVFS_RSNUM;
 #if defined(INET) || defined(INET6)
 static unsigned jail_max_af_ips = 255;
 #endif
+
+static int
+prison_jid_cmp(const struct prison *a, const struct prison *b)
+{
+
+	return ((a->pr_id > b->pr_id) - (a->pr_id < b->pr_id));
+}
+
+
+/*
+ * The index contains the same prisons as allprison, including dying prisons
+ * but excluding prison0.  Keep both collections in step under the exclusive
+ * allprison_lock, including when a dying prison is renumbered.
+ */
+static void
+prison_jid_insert(struct prison *pr)
+{
+	struct prison *old __diagused;
+
+	sx_assert(&allprison_lock, SA_XLOCKED);
+	old = RB_INSERT(prison_jid_tree, &prison_jids, pr);
+	KASSERT(old == NULL, ("Duplicate prison ID %d", pr->pr_id));
+}
+
+static void
+prison_jid_remove(struct prison *pr)
+{
+	sx_assert(&allprison_lock, SA_XLOCKED);
+	RB_REMOVE(prison_jid_tree, &prison_jids, pr);
+}
+
+/*
+ * Return an unlocked prison with this ID, or NULL.  Search by integer to avoid
+ * putting a struct prison on the kernel stack just to supply a search key.
+ */
+static struct prison *
+prison_lookup(int prid)
+{
+	struct prison *pr;
+
+	sx_assert(&allprison_lock, SX_LOCKED);
+	pr = RB_ROOT(&prison_jids);
+	while (pr != NULL) {
+		if (prid < pr->pr_id)
+			pr = RB_LEFT(pr, pr_jidlink);
+		else if (prid > pr->pr_id)
+			pr = RB_RIGHT(pr, pr_jidlink);
+		else
+			break;
+	}
+	return (pr);
+}
+
+/* Find the least ID strictly greater than prid, even if prid is absent. */
+static struct prison *
+prison_lookup_gt(int prid)
+{
+	struct prison *pr, *next;
+
+	sx_assert(&allprison_lock, SX_LOCKED);
+	pr = RB_ROOT(&prison_jids);
+	next = NULL;
+	while (pr != NULL) {
+		if (pr->pr_id > prid) {
+			next = pr;
+			pr = RB_LEFT(pr, pr_jidlink);
+		} else
+			pr = RB_RIGHT(pr, pr_jidlink);
+	}
+	return (next);
+}
 
 /*
  * Initialize the parts of prison0 that can't be static-initialized with
@@ -1617,11 +1697,8 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 		 * See if a requested jid already exists.  Keep track of
 		 * where it can be inserted later.
 		 */
-		TAILQ_FOREACH(inspr, &allprison, pr_list) {
-			if (inspr->pr_id < jid)
-				continue;
-			if (inspr->pr_id > jid)
-				break;
+		inspr = prison_lookup(jid);
+		if (inspr != NULL) {
 			if (prison_isalive(inspr)) {
 				pr = inspr;
 				mtx_lock(&pr->pr_mtx);
@@ -1631,8 +1708,8 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 				deadpr = inspr;
 			}
 			inspr = NULL;
-			break;
-		}
+		} else
+			inspr = prison_lookup_gt(jid);
 		if (cuflags == JAIL_CREATE && pr != NULL) {
 			/*
 			 * Even creators that cannot see the jail will
@@ -1777,7 +1854,9 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 				goto done_deref;
 			}
 			mtx_lock(&deadpr->pr_mtx);
+			prison_jid_remove(deadpr);
 			deadpr->pr_id = deadid;
+			prison_jid_insert(deadpr);
 			mtx_unlock(&deadpr->pr_mtx);
 			if (dinspr == deadpr)
 				inspr = deadpr;
@@ -1812,6 +1891,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 			TAILQ_INSERT_BEFORE(inspr, pr, pr_list);
 		else
 			TAILQ_INSERT_TAIL(&allprison, pr, pr_list);
+		prison_jid_insert(pr);
 
 		pr->pr_parent = ppr;
 		prison_hold(ppr);
@@ -2685,9 +2765,9 @@ kern_jail_get(struct thread *td, struct uio *optuio, int flags)
 
 	error = vfs_copyopt(opts, JAIL_PARAM_LASTJID, &jid, sizeof(jid));
 	if (error == 0) {
-		TAILQ_FOREACH(pr, &allprison, pr_list) {
-			if (pr->pr_id > jid &&
-			    ((flags & JAIL_DYING) || prison_isalive(pr)) &&
+		for (pr = prison_lookup_gt(jid); pr != NULL;
+		    pr = TAILQ_NEXT(pr, pr_list)) {
+			if (((flags & JAIL_DYING) || prison_isalive(pr)) &&
 			    prison_ischild(mypr, pr)) {
 				mtx_lock(&pr->pr_mtx);
 				drflags |= PD_LOCKED;
@@ -3342,11 +3422,8 @@ prison_find(int prid)
 	struct prison *pr;
 
 	sx_assert(&allprison_lock, SX_LOCKED);
-	TAILQ_FOREACH(pr, &allprison, pr_list) {
-		if (pr->pr_id < prid)
-			continue;
-		if (pr->pr_id > prid)
-			break;
+	pr = prison_lookup(prid);
+	if (pr != NULL) {
 		KASSERT(prison_isvalid(pr), ("Found invalid prison %p", pr));
 		mtx_lock(&pr->pr_mtx);
 		return (pr);
@@ -3361,16 +3438,14 @@ struct prison *
 prison_find_child(struct prison *mypr, int prid)
 {
 	struct prison *pr;
-	int descend;
 
 	sx_assert(&allprison_lock, SX_LOCKED);
-	FOREACH_PRISON_DESCENDANT(mypr, pr, descend) {
-		if (pr->pr_id == prid) {
-			KASSERT(prison_isvalid(pr),
-			    ("Found invalid prison %p", pr));
-			mtx_lock(&pr->pr_mtx);
-			return (pr);
-		}
+	pr = prison_lookup(prid);
+	if (pr != NULL && prison_ischild(mypr, pr)) {
+		KASSERT(prison_isvalid(pr),
+		    ("Found invalid prison %p", pr));
+		mtx_lock(&pr->pr_mtx);
+		return (pr);
 	}
 	return (NULL);
 }
@@ -3777,6 +3852,7 @@ prison_deref(struct prison *pr, int flags)
 					mac_prison_destroy(pr);
 #endif
 					pr->pr_state = PRISON_STATE_INVALID;
+					prison_jid_remove(pr);
 					TAILQ_REMOVE(&allprison, pr, pr_list);
 					LIST_REMOVE(pr, pr_sibling);
 					TAILQ_INSERT_TAIL(&freeprison, pr,
@@ -3907,6 +3983,7 @@ prison_deref_kill(struct prison *pr, struct prisonlist *freeprison)
 				LIST_REMOVE(rpr, pr_sibling);
 			rpr = cpr;
 			rpr->pr_state = PRISON_STATE_INVALID;
+			prison_jid_remove(rpr);
 			TAILQ_REMOVE(&allprison, rpr, pr_list);
 			TAILQ_INSERT_TAIL(freeprison, rpr, pr_list);
 			/*
