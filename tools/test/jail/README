@@ -1,0 +1,70 @@
+Jail management benchmark
+Requires root, Python 3, and an idle FreeBSD host. Creates flat persistent
+jails: path=/, host=inherit, no VNET, IP addresses, or processes.
+    make
+    sudo make smoke OUTPUT=smoke
+    sudo make test MAX_JAILS=10000 LIST_EVERY=100 OUTPUT=baseline
+test and benchmark are aliases. OUTPUT must be a new directory; omitted,
+it is generated. Do not run timing trials concurrently.
+Make variables (defaults):
+    MAX_JAILS=10000       smoke: 10
+    LIST_EVERY=100        smoke: 1; queries also run at 0, 1, and MAX_JAILS
+    REPEATS=5 WARMUPS=1
+    MODES=jid,default     optional: all
+    PAUSE_AT=            comma-separated populations; wait for Enter
+    ALLOW_EXISTING=no     yes permits unrelated live/dying jails
+    KEEP_JAILS=no         yes retains jails only after success
+    CLEANUP_ORDER=reverse newest first; forward removes oldest first
+    DRAIN_TIMEOUT=30      seconds; 0 observes once without waiting
+    PYTHON=python3
+Results (times in ns):
+    creation.csv         each jail -i -c, including process startup
+    queries.csv          repeated query samples at each checkpoint
+    run.json             environment, arguments, status, cleanup history
+    cleanup/*/deletion.csv  each jail -r name, including process startup
+    cleanup/*/summary.json snapshot, removal, verification, drain, total
+
+Summarize existing results (no root needed):
+
+    make report INPUT=baseline
+    python3 report.py collection.tar.gz > report.txt
+
+Accepts directories, tar/zip archives, multiple inputs, and --all-checkpoints.
+Prints timing statistics, cleanup status, and trace diagnostics.
+
+Query operations:
+    jls_jid/default/all  jls -n jid / jls / jls -n all; output discarded
+    syscall_enum         jail_get(lastjid), jid only; N+1 calls
+    syscall_jid          N exact-JID lookups; snapshot outside timing
+Direct probes exclude startup/printing and include the userspace loop.
+Creation row N has N-1 benchmark jails already present. Compare medians and
+spread across matched kernels/configurations; repeat whole growth runs.
+Cleanup uses journaled names, including after errors or interruption.
+Keep names.txt until cleanup completes. Retry with:
+    sudo make cleanup-run RUN=baseline
+deletion.csv tracks population from a snapshot and successful removals.
+Exclude status=not_live rows. Keep removal order fixed across comparisons;
+test each order on a fresh population. Drain polls jls -d about every 250 ms;
+disappearance means unlinking, not completion of all resource destruction.
+DTrace: pause the benchmark, then trace from another terminal:
+    sudo make test PAUSE_AT=1000,10000 OUTPUT=trace-populations
+    sudo kldload dtraceall
+    sudo make trace TRACE_LABEL=1000
+After tracing finishes, resume; repeat at 10000 with a new label. trace runs
+trace-jls, trace-enum, trace-lock sequentially, each tracing its own command.
+TRACE_LABEL selects filenames, not population. Defaults:
+    TRACE_DIR=${.OBJDIR}/traces TRACE_REPEATS=20 TRACE_LABEL=manual
+    DTRACE=dtrace DTRACEFLAGS="-x nolibs"
+Reports: jls-LABEL.txt, enum-LABEL.txt, lock-LABEL.txt. Lock events are
+system-wide allprison_lock sleep/spin waits, not hold times.
+Trace deletion on a fresh retained population:
+    sudo make test MAX_JAILS=10000 KEEP_JAILS=yes OUTPUT=delete-10000
+    sudo make trace-cleanup RUN=delete-10000 TRACE_LABEL=delete-10000
+trace-cleanup removes the jails and records cleanup measurements plus
+cleanup-LABEL.txt and .txt.stderr. It includes asynchronous prison cleanup;
+function times are inclusive and may overlap. Missing/inlined FBT probes
+are allowed. Check call counts, drops, and cpu_gt_elapsed_samples before
+attributing CPU time. Keep instrumented and uninstrumented trials separate.
+After installing tests/sys/kern:
+    cd /usr/tests/sys/kern
+    sudo kyua test jail_jid_index:lookup_lifecycle
