@@ -23,6 +23,15 @@ Results (times in ns):
     run.json             environment, arguments, status, cleanup history
     cleanup/*/deletion.csv  each jail -r name, including process startup
     cleanup/*/summary.json snapshot, removal, verification, drain, total
+
+Summarize existing results (no root needed):
+
+    make report INPUT=baseline
+    python3 report.py collection.tar.gz > report.txt
+
+Accepts directories, tar/zip archives, multiple inputs, and --all-checkpoints.
+Prints timing statistics, cleanup status, and trace diagnostics.
+
 Query operations:
     jls_jid/default/all  jls -n jid / jls / jls -n all; output discarded
     syscall_enum         jail_get(lastjid), jid only; N+1 calls

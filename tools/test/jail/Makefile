@@ -19,6 +19,7 @@ OUTPUT?=
 PAUSE_AT?=
 ALLOW_EXISTING?=	no
 RUN?=
+INPUT?=		.
 KEEP_JAILS?=	no
 CLEANUP_ORDER?=	reverse
 DRAIN_TIMEOUT?=	30
@@ -56,10 +57,13 @@ _TRACE_ENUM=	${TRACE_DIR}/enum-${TRACE_LABEL}.txt
 _TRACE_LOCK=	${TRACE_DIR}/lock-${TRACE_LABEL}.txt
 _TRACE_CLEANUP=	${TRACE_DIR}/cleanup-${TRACE_LABEL}.txt
 
-.PHONY: test benchmark smoke cleanup-run trace trace-jls trace-enum trace-lock trace-cleanup
+.PHONY: test benchmark smoke cleanup-run report trace trace-jls trace-enum trace-lock trace-cleanup
 
 test benchmark smoke: ${PROG}
 	${PYTHON:Q} ${_RUNNER:Q} ${_BENCH_ARGS}
+
+report:
+	${PYTHON:Q} ${.CURDIR:Q}/report.py ${INPUT:Q}
 
 cleanup-run:
 .if empty(RUN)
