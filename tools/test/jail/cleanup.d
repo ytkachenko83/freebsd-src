@@ -1,4 +1,9 @@
 #!/usr/sbin/dtrace -s
+/*
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Copyright (c) 2026 Yuri Tkachenko
+ */
 /* Run via make trace-cleanup; the runner specializes this prefix per run. */
 #pragma D option quiet
 

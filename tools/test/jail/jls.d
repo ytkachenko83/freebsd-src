@@ -1,4 +1,9 @@
 #!/usr/sbin/dtrace -s
+/*
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Copyright (c) 2026 Yuri Tkachenko
+ */
 /* dtrace -q -s jls.d -c '/usr/sbin/jls -n jid' */
 #pragma D option quiet
 

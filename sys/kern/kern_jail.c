@@ -290,6 +290,13 @@ static int jail_default_devfs_rsnum = JAIL_DEFAULT_DEVFS_RSNUM;
 static unsigned jail_max_af_ips = 255;
 #endif
 
+/* Check after both the JID tree and allprison have been updated. */
+#define PRISON_JID_ASSERT_ORDER(pr)				\
+	KASSERT(RB_NEXT(prison_jid_tree, &prison_jids, (pr)) == \
+	    TAILQ_NEXT((pr), pr_list),				\
+	    ("Prison ID %d: tree/list successor mismatch",	\
+	    (pr)->pr_id))
+
 static int
 prison_jid_cmp(const struct prison *a, const struct prison *b)
 {
@@ -1870,6 +1877,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 					TAILQ_INSERT_HEAD(&allprison, deadpr,
 					    pr_list);
 			}
+			PRISON_JID_ASSERT_ORDER(deadpr);
 		}
 		if (jid == 0 && (jid = get_next_prid(&inspr)) == 0) {
 			error = EAGAIN;
@@ -1892,6 +1900,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 		else
 			TAILQ_INSERT_TAIL(&allprison, pr, pr_list);
 		prison_jid_insert(pr);
+		PRISON_JID_ASSERT_ORDER(pr);
 
 		pr->pr_parent = ppr;
 		prison_hold(ppr);

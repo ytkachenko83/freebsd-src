@@ -1,5 +1,10 @@
 #!/usr/sbin/dtrace -s
-/* System-wide waits during -c command. Arguments match this source tree. */
+/*
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Copyright (c) 2026 Yuri Tkachenko
+ */
+/* System-wide waits during -c command. */
 #pragma D option quiet
 
 lockstat:::sx-block,
