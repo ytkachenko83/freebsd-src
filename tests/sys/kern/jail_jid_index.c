@@ -3,41 +3,38 @@
  *
  * Copyright (c) 2026 Yuri Tkachenko
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
-#include <unistd.h>
+#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/jail.h>
-#include <sys/wait.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <errno.h>
+#include <sys/wait.h>
+
 #include <atf-c.h>
+#include <errno.h>
 #include <jail.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #define BASE_LOOKUP_ATTEMPTS 100
-#define RND_UPPER_BOUND 400000
-#define TEST_JID_FILE "jail_jid_test.lst"
-#define JAIL_PREFIX "jail_jid"
-#define JAIL_NAME(suffix) JAIL_PREFIX suffix
+#define RND_UPPER_BOUND	     400000
+#define TEST_JID_FILE	     "jail_jid_test.lst"
+#define JAIL_PREFIX	     "jail_jid"
+#define JAIL_NAME(suffix)    JAIL_PREFIX suffix
 #define ABSENT_JAIL_BY_JID(jid, flag) \
-(get_jail_by_jid(jid, flag, NULL) == -1 && \
-	errno == ENOENT)
+	(get_jail_by_jid(jid, flag, NULL) == -1 && errno == ENOENT)
 #define ABSENT_JAIL_BY_JID_0(jid) ABSENT_JAIL_BY_JID(jid, 0)
 #define NO_JAIL_LOOKUP_OVERFLOW \
-(get_jail_by_lastjid(2147483647, 0, NULL) == -1 && \
-	errno == ENOENT)
+	(get_jail_by_lastjid(2147483647, 0, NULL) == -1 && errno == ENOENT)
 
-struct jid_node
-{
+struct jid_node {
 	int jid;
 	struct jid_node *next;
 };
 
-struct jail_fixture
-{
+struct jail_fixture {
 	int parent;
 	int a;
 	int b;
@@ -78,7 +75,8 @@ find_jid(struct jid_node *head, int jid)
 }
 
 static void
-delete_jid_nodes(struct jid_node *head) {
+delete_jid_nodes(struct jid_node *head)
+{
 	struct jid_node *node;
 
 	while (head != NULL) {
@@ -96,35 +94,21 @@ create_jail(int jid, const char *name, int children_max, int incl_bad_param)
 	int closed, written;
 	FILE *fp;
 
-	snprintf(children_max_str, sizeof(children_max_str),
-			"%d", children_max);
+	snprintf(children_max_str, sizeof(children_max_str), "%d",
+	    children_max);
 	snprintf(jid_str, sizeof(jid_str), "%d", jid);
 
 	if (incl_bad_param)
-		jid = jail_setv(JAIL_CREATE,
-			"jid", jid_str,
-			"name", name,
-			"persist", "true",
-			"path", "/",
-			"host", "inherit",
-			"ip4", "disable",
-			"ip6", "disable",
-			"children.max", children_max_str,
-			"jid_index_test_unknown_parameter", "1",
-			NULL
-			);
+		jid = jail_setv(JAIL_CREATE, "jid", jid_str, "name", name,
+		    "persist", "true", "path", "/", "host", "inherit", "ip4",
+		    "disable", "ip6", "disable", "children.max",
+		    children_max_str, "jid_index_test_unknown_parameter", "1",
+		    NULL);
 	else
-		jid = jail_setv(JAIL_CREATE,
-			"jid", jid_str,
-			"name", name,
-			"persist", "true",
-			"path", "/",
-			"host", "inherit",
-			"ip4", "disable",
-			"ip6", "disable",
-			"children.max", children_max_str,
-			NULL
-			);
+		jid = jail_setv(JAIL_CREATE, "jid", jid_str, "name", name,
+		    "persist", "true", "path", "/", "host", "inherit", "ip4",
+		    "disable", "ip6", "disable", "children.max",
+		    children_max_str, NULL);
 	if (jid > -1) {
 		fp = fopen(TEST_JID_FILE, "a");
 		if (fp == NULL)
@@ -135,7 +119,7 @@ create_jail(int jid, const char *name, int children_max, int incl_bad_param)
 			goto cleanup_jail;
 		return (jid);
 
-		cleanup_jail:
+	cleanup_jail:
 		jail_remove(jid);
 		errno = EIO;
 		jid = -1;
@@ -157,7 +141,7 @@ remove_journal_entry(int jid)
 	if (fp == NULL)
 		return (-1);
 	error = 0;
-	for (offset = 0; ; offset += sizeof(j)) {
+	for (offset = 0;; offset += sizeof(j)) {
 		errno = 0;
 		nread = fread(&j, 1, sizeof(j), fp);
 		if (nread != sizeof(j)) {
@@ -207,16 +191,9 @@ get_jail_by_jid(int jid, int flags, char *jail_name)
 
 	snprintf(jid_str, sizeof(jid_str), "%d", jid);
 	if (jail_name == NULL) {
-		jid = jail_getv(flags,
-			"jid", jid_str,
-			NULL
-			);
+		jid = jail_getv(flags, "jid", jid_str, NULL);
 	} else {
-		jid = jail_getv(flags,
-			"jid", jid_str,
-			"name", jail_name,
-			NULL
-			);
+		jid = jail_getv(flags, "jid", jid_str, "name", jail_name, NULL);
 	}
 	return (jid);
 }
@@ -228,16 +205,10 @@ get_jail_by_lastjid(int jid, int flags, char *jail_name)
 
 	snprintf(jid_str, sizeof(jid_str), "%d", jid);
 	if (jail_name == NULL) {
-		jid = jail_getv(flags,
-			"lastjid", jid_str,
-			NULL
-			);
+		jid = jail_getv(flags, "lastjid", jid_str, NULL);
 	} else {
-		jid = jail_getv(flags,
-			"lastjid", jid_str,
-			"name", jail_name,
-			NULL
-			);
+		jid = jail_getv(flags, "lastjid", jid_str, "name", jail_name,
+		    NULL);
 	}
 	return (jid);
 }
@@ -285,10 +256,9 @@ fork_check(int parent_jid, int a_jid, int b_jid, int outside_jid)
 	pid = fork();
 	if (pid == 0) {
 		if (jail_attach(parent_jid) == 0 &&
-			get_jail_by_jid(a_jid, 0, NULL) == a_jid &&
-			ABSENT_JAIL_BY_JID_0(parent_jid) &&
-			ABSENT_JAIL_BY_JID_0(outside_jid)
-			) {
+		    get_jail_by_jid(a_jid, 0, NULL) == a_jid &&
+		    ABSENT_JAIL_BY_JID_0(parent_jid) &&
+		    ABSENT_JAIL_BY_JID_0(outside_jid)) {
 			jids = walk_jails(0, 0);
 			passed = find_jid(jids, a_jid) && find_jid(jids, b_jid);
 			delete_jid_nodes(jids);
@@ -303,8 +273,9 @@ fork_check(int parent_jid, int a_jid, int b_jid, int outside_jid)
 		if (errno != EINTR)
 			return (-1);
 	}
-	return (WIFEXITED(stat_loc) && WEXITSTATUS(stat_loc) == EXIT_SUCCESS
-			? 0 : -1);
+	return (WIFEXITED(stat_loc) && WEXITSTATUS(stat_loc) == EXIT_SUCCESS ?
+		0 :
+		-1);
 }
 
 /*
@@ -452,7 +423,7 @@ wait_absent(int jid)
 		clock_gettime(CLOCK_MONOTONIC, &curr);
 		curr_secs = curr.tv_sec + (double)curr.tv_nsec / 1e9;
 		if (curr_secs - start_secs > 10 ||
-			nanosleep(&sleep_ts, NULL) < 0)
+		    nanosleep(&sleep_ts, NULL) < 0)
 			return (-1);
 	}
 	return (0);
@@ -468,9 +439,8 @@ setup_jails(struct jail_fixture *fixture)
 	for (i = 0; i < BASE_LOOKUP_ATTEMPTS; i++) {
 		fixture->base = rand() % RND_UPPER_BOUND;
 		for (j = 0; j < 8; j++) {
-			if (!(ABSENT_JAIL_BY_JID(
-					fixture->base + j,
-					JAIL_DYING)))
+			if (!(ABSENT_JAIL_BY_JID(fixture->base + j,
+				JAIL_DYING)))
 				break;
 		}
 		if (j == 8)
@@ -478,17 +448,15 @@ setup_jails(struct jail_fixture *fixture)
 	}
 	fixture->parent = create_jail(fixture->base, JAIL_PREFIX, 4, 0);
 	ATF_REQUIRE_MSG(fixture->parent != -1, "parent create_jail: %s",
-		jail_errmsg);
+	    jail_errmsg);
 	fixture->a = create_jail(fixture->base + 2, JAIL_NAME(".a"), 0, 0);
 	ATF_REQUIRE_MSG(fixture->a != -1, "create_jail[a]: %s", jail_errmsg);
 	fixture->b = create_jail(fixture->base + 4, JAIL_NAME(".b"), 0, 0);
 	ATF_REQUIRE_MSG(fixture->b != -1, "create_jail[b]: %s", jail_errmsg);
-	fixture->outside = create_jail(
-		fixture->base + 6,
-		JAIL_NAME("_outside"),
-		0, 0);
+	fixture->outside = create_jail(fixture->base + 6, JAIL_NAME("_outside"),
+	    0, 0);
 	ATF_REQUIRE_MSG(fixture->outside != -1, "create_jail[outside]: %s",
-		jail_errmsg);
+	    jail_errmsg);
 }
 
 static void
@@ -511,12 +479,12 @@ cleanup_journal(void)
 		while (offset > 0) {
 			offset -= sizeof(jid);
 			if (fseek(fp, offset, SEEK_SET) != 0 ||
-				fread(&jid, sizeof(jid), 1, fp) != 1)
+			    fread(&jid, sizeof(jid), 1, fp) != 1)
 				goto io_error;
 			if (jid > -1 && jail_remove(jid) != 0 &&
-				errno != ENOENT) {
+			    errno != ENOENT) {
 				ATF_CHECK_MSG(0, "jail_remove(%d): %s", jid,
-					strerror(errno));
+				    strerror(errno));
 				failed = 1;
 			}
 		}
@@ -525,9 +493,9 @@ cleanup_journal(void)
 			remove(TEST_JID_FILE);
 		return;
 
-		io_error:
+	io_error:
 		ATF_CHECK_MSG(0, "Unable to read jid tracker - %s",
-			TEST_JID_FILE);
+		    TEST_JID_FILE);
 		fclose(fp);
 	}
 }
@@ -549,16 +517,15 @@ ATF_TC_BODY(lookup_enumeration, tc)
 	setup_jails(&fixture);
 
 	ATF_REQUIRE_MSG(get_jail_by_jid(fixture.parent, 0, jail_name) != -1,
-		"get_jail: %s", jail_errmsg);
-	ATF_REQUIRE_MSG(strcmp(JAIL_PREFIX, jail_name) == 0,
-		"failed: %s != %s", JAIL_PREFIX, jail_name);
+	    "get_jail: %s", jail_errmsg);
+	ATF_REQUIRE_MSG(strcmp(JAIL_PREFIX, jail_name) == 0, "failed: %s != %s",
+	    JAIL_PREFIX, jail_name);
 	ATF_REQUIRE_MSG(get_jail_by_jid(fixture.a, 0, jail_name) != -1,
-		"get_jail[a]: %s", jail_errmsg);
+	    "get_jail[a]: %s", jail_errmsg);
 	ATF_REQUIRE(strcmp(JAIL_NAME(".a"), jail_name) == 0);
 	ATF_REQUIRE(ABSENT_JAIL_BY_JID_0(fixture.base + 1));
-	ATF_REQUIRE(get_jail_by_lastjid(
-		fixture.base + 1,
-		0, NULL) == fixture.a);
+	ATF_REQUIRE(
+	    get_jail_by_lastjid(fixture.base + 1, 0, NULL) == fixture.a);
 	ATF_REQUIRE(get_jail_by_lastjid(fixture.a, 0, NULL) == fixture.b);
 	ATF_REQUIRE(NO_JAIL_LOOKUP_OVERFLOW);
 	jids = walk_jails(-1, 0);
@@ -604,17 +571,14 @@ ATF_TC_BODY(enumeration_after_removal, tc)
 	struct jail_fixture fixture;
 
 	setup_jails(&fixture);
-	ATF_REQUIRE(create_jail(
-		fixture.base + 1,
-		JAIL_NAME("_failed"),
-		0, 1) == -1);
+	ATF_REQUIRE(
+	    create_jail(fixture.base + 1, JAIL_NAME("_failed"), 0, 1) == -1);
 	ATF_REQUIRE(wait_absent(fixture.base + 1) == 0);
 	purge_jail(fixture.a);
 	ATF_REQUIRE(wait_absent(fixture.a) == 0);
 	ATF_REQUIRE(get_jail_by_lastjid(fixture.a, 0, NULL) == fixture.b);
-	ATF_REQUIRE(get_jail_by_lastjid(
-		fixture.base + 1,
-		0, NULL) == fixture.b);
+	ATF_REQUIRE(
+	    get_jail_by_lastjid(fixture.base + 1, 0, NULL) == fixture.b);
 }
 ATF_TC_CLEANUP(enumeration_after_removal, tc)
 {
@@ -640,21 +604,19 @@ ATF_TC_BODY(dying_jid_reuse, tc)
 	ATF_REQUIRE(old_jid != -1);
 	held_fd = held_socket(old_jid);
 	ATF_REQUIRE_MSG(held_fd != -1,
-		"Unable to hold socket, dying jail won't be reproduced");
+	    "Unable to hold socket, dying jail won't be reproduced");
 	purge_jail(old_jid);
 	ATF_REQUIRE(get_jail_by_jid(old_jid, JAIL_DYING, jail_name) != -1 &&
-		strcmp(JAIL_NAME("_old"), jail_name) == 0);
+	    strcmp(JAIL_NAME("_old"), jail_name) == 0);
 	ATF_REQUIRE(ABSENT_JAIL_BY_JID_0(old_jid));
 	ATF_REQUIRE(
-		create_jail(old_jid, JAIL_NAME("_replacement"), 0, 0) != -1);
+	    create_jail(old_jid, JAIL_NAME("_replacement"), 0, 0) != -1);
 	renamed_jid = jail_getv(JAIL_DYING, "name", JAIL_NAME("_old"), NULL);
 	ATF_REQUIRE(renamed_jid != old_jid);
 	ATF_REQUIRE(get_jail_by_jid(old_jid, 0, jail_name) != -1 &&
-		strcmp(JAIL_NAME("_replacement"), jail_name) == 0
-		);
+	    strcmp(JAIL_NAME("_replacement"), jail_name) == 0);
 	ATF_REQUIRE(get_jail_by_jid(renamed_jid, JAIL_DYING, jail_name) != -1 &&
-		strcmp(JAIL_NAME("_old"), jail_name) == 0
-		);
+	    strcmp(JAIL_NAME("_old"), jail_name) == 0);
 	ATF_REQUIRE(ABSENT_JAIL_BY_JID_0(renamed_jid));
 	jids = walk_jails(0, JAIL_DYING);
 	i = find_jid(jids, renamed_jid);
@@ -690,7 +652,7 @@ ATF_TC_BODY(subtree_removal, tc)
 	ATF_REQUIRE_MSG(remove_journal_entry(fixture.a) == 0,
 	    "remove_journal_entry(%d): %s", fixture.a, strerror(errno));
 	ATF_REQUIRE(get_jail_by_jid(fixture.outside, 0, jail_name) != -1 &&
-		strcmp(JAIL_NAME("_outside"), jail_name) == 0);
+	    strcmp(JAIL_NAME("_outside"), jail_name) == 0);
 }
 ATF_TC_CLEANUP(subtree_removal, tc)
 {

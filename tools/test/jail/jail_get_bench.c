@@ -27,13 +27,17 @@ getone(const char *key, int value)
 	/* Reconstruct iovecs: jail_get() may update their lengths. */
 	int jid = 0;
 	struct iovec iov[] = {
-		{ .iov_base = __DECONST(void *, key), .iov_len = strlen(key) + 1 },
+		{ .iov_base = __DECONST(void *, key),
+		    .iov_len = strlen(key) + 1 },
 		{ .iov_base = &value, .iov_len = sizeof(value) },
-		{ .iov_base = __DECONST(void *, "jid"), .iov_len = sizeof("jid") },
+		{ .iov_base = __DECONST(void *, "jid"),
+		    .iov_len = sizeof("jid") },
 		{ .iov_base = &jid, .iov_len = sizeof(jid) },
 	};
 
-	/* Exact lookup needs only the key, with no separate output parameter. */
+	/*
+         * Exact lookup needs only the key, with no separate output parameter.
+	 */
 	if (strcmp(key, "jid") == 0)
 		return (jail_get(iov, 2, 0));
 	return (jail_get(iov, 4, 0));
@@ -49,8 +53,8 @@ main(int argc, char **argv)
 	long parsed;
 	int exact;
 
-	if (argc != 3 || (strcmp(argv[1], "enum") != 0 &&
-	    strcmp(argv[1], "jid") != 0))
+	if (argc != 3 ||
+	    (strcmp(argv[1], "enum") != 0 && strcmp(argv[1], "jid") != 0))
 		errx(1, "usage: %s enum|jid repetitions", argv[0]);
 	errno = 0;
 	parsed = strtol(argv[2], &end, 10);
@@ -86,7 +90,8 @@ main(int argc, char **argv)
 			for (size_t i = 0; i < count; i++) {
 				jid = getone("jid", ids[i]);
 				if (jid != ids[i])
-					errx(1, "JID disappeared/changed during lookup");
+					errx(1,
+					    "JID disappeared/changed during lookup");
 				calls++;
 				visible++;
 			}
