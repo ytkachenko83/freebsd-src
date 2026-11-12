@@ -22,11 +22,13 @@
 #define TEST_JID_FILE "jail_jid_test.lst"
 #define JAIL_PREFIX "jail_jid"
 #define JAIL_NAME(suffix) JAIL_PREFIX suffix
-#define ABSENT_JAIL_BY_JID(jid, flag) get_jail_by_jid(jid, flag, NULL) == -1 && \
-	errno == ENOENT
+#define ABSENT_JAIL_BY_JID(jid, flag) \
+(get_jail_by_jid(jid, flag, NULL) == -1 && \
+	errno == ENOENT)
 #define ABSENT_JAIL_BY_JID_0(jid) ABSENT_JAIL_BY_JID(jid, 0)
-#define NO_JAIL_LOOKUP_OVERFLOW get_jail_by_lastjid(2147483647, 0, NULL) == -1 && \
-	errno == ENOENT
+#define NO_JAIL_LOOKUP_OVERFLOW \
+(get_jail_by_lastjid(2147483647, 0, NULL) == -1 && \
+	errno == ENOENT)
 
 struct jid_node
 {
