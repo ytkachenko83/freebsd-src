@@ -1,5 +1,5 @@
 /*-
-* SPDX-License-Identifier: BSD-2-Clause
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (c) 2026 Yuri Tkachenko
  */
@@ -604,7 +604,8 @@ ATF_TC_BODY(dying_jid_reuse, tc)
 	old_jid = create_jail(fixture.base + 1, JAIL_NAME("_old"), 0, 0);
 	ATF_REQUIRE(old_jid != -1);
 	held_fd = held_socket(old_jid);
-	ATF_REQUIRE_MSG(held_fd != -1, "Unable to hold socket, dying jail won't be reproduced");
+	ATF_REQUIRE_MSG(held_fd != -1, 
+		"Unable to hold socket, dying jail won't be reproduced");
 	purge_jail(old_jid);
 	ATF_REQUIRE(get_jail_by_jid(old_jid, JAIL_DYING, jail_name) != -1 &&
 		strcmp(JAIL_NAME("_old"), jail_name) == 0);
