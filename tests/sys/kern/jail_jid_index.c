@@ -70,7 +70,8 @@ find_jid(struct jid_node *head, int jid)
 
 	node = head;
 	while (node != NULL) {
-		if (node->jid == jid) return (1);
+		if (node->jid == jid) 
+			return (1);
 		node = node->next;
 	}
 	return (0);
@@ -256,18 +257,19 @@ walk_jails(int start, int flags)
 	for (;; start = jid) {
 		jid = get_jail_by_lastjid(start, flags, NULL);
 		if (jid == -1) {
-			if (errno == ENOENT) return (head);
+			if (errno == ENOENT) 
+				return (head);
 			errno = EINVAL;
-			return NULL;
+			return (NULL);
 		}
 		if (jid <= start) {
 			errno = EINVAL;
-			return NULL;
+			return (NULL);
 		}
 		head = push(head, jid);
 		if (head == NULL) {
 			errno = EINVAL;
-			return NULL;
+			return (NULL);
 		}
 	}
 }
@@ -281,7 +283,7 @@ fork_check(int parent_jid, int a_jid, int b_jid, int outside_jid)
 
 	pid = fork();
 	if (pid == 0) {
-		if (jail_attach(parent_jid)==0 &&
+		if (jail_attach(parent_jid) == 0 &&
 			get_jail_by_jid(a_jid, 0, NULL) == a_jid &&
 			ABSENT_JAIL_BY_JID_0(parent_jid) &&
 			ABSENT_JAIL_BY_JID_0(outside_jid)
@@ -300,7 +302,8 @@ fork_check(int parent_jid, int a_jid, int b_jid, int outside_jid)
 		if (errno != EINTR)
 			return (-1);
 	}
-	return (WIFEXITED(stat_loc) && WEXITSTATUS(stat_loc) == EXIT_SUCCESS ? 0 : -1);
+	return (WIFEXITED(stat_loc) && WEXITSTATUS(stat_loc) == EXIT_SUCCESS 
+			? 0 : -1);
 }
 
 /* Retain a jailed socket credential in the host until the returned FD closes. */
@@ -451,10 +454,11 @@ setup_jails(struct jail_fixture *fixture)
 
 	srand((unsigned)time(NULL));
 
-	for (i=0; i < BASE_LOOKUP_ATTEMPTS; i++) {
+	for (i = 0; i < BASE_LOOKUP_ATTEMPTS; i++) {
 		fixture->base = rand() % RND_UPPER_BOUND;
 		for (j=0; j < 8; j++) {
-			if (!(ABSENT_JAIL_BY_JID(fixture->base + j, JAIL_DYING))) break;
+			if (!(ABSENT_JAIL_BY_JID(fixture->base + j, JAIL_DYING))) 
+				break;
 		}
 		if (j == 8) break;
 	}
