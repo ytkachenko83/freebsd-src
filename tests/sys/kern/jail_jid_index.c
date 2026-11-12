@@ -307,7 +307,8 @@ fork_check(int parent_jid, int a_jid, int b_jid, int outside_jid)
 			? 0 : -1);
 }
 
-/* Retain a jailed socket credential in the host 
+/* 
+ * Retain a jailed socket credential in the host 
  * until the returned FD closes. 
  */
 static int
