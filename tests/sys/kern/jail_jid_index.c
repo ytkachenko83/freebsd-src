@@ -70,7 +70,7 @@ find_jid(struct jid_node *head, int jid)
 
 	node = head;
 	while (node != NULL) {
-		if (node->jid == jid) 
+		if (node->jid == jid)
 			return (1);
 		node = node->next;
 	}
@@ -257,7 +257,7 @@ walk_jails(int start, int flags)
 	for (;; start = jid) {
 		jid = get_jail_by_lastjid(start, flags, NULL);
 		if (jid == -1) {
-			if (errno == ENOENT) 
+			if (errno == ENOENT)
 				return (head);
 			errno = EINVAL;
 			return (NULL);
@@ -456,11 +456,12 @@ setup_jails(struct jail_fixture *fixture)
 
 	for (i = 0; i < BASE_LOOKUP_ATTEMPTS; i++) {
 		fixture->base = rand() % RND_UPPER_BOUND;
-		for (j=0; j < 8; j++) {
-			if (!(ABSENT_JAIL_BY_JID(fixture->base + j, JAIL_DYING))) 
+		for (j = 0; j < 8; j++) {
+			if (!(ABSENT_JAIL_BY_JID(fixture->base + j, JAIL_DYING)))
 				break;
 		}
-		if (j == 8) break;
+		if (j == 8)
+			break;
 	}
 	fixture->parent = create_jail(fixture->base, JAIL_PREFIX, 4, 0);
 	ATF_REQUIRE_MSG(fixture->parent != -1, "parent create_jail: %s", jail_errmsg);
@@ -610,7 +611,7 @@ ATF_TC_BODY(dying_jid_reuse, tc)
 	old_jid = create_jail(fixture.base + 1, JAIL_NAME("_old"), 0, 0);
 	ATF_REQUIRE(old_jid != -1);
 	held_fd = held_socket(old_jid);
-	ATF_REQUIRE_MSG(held_fd != -1, 
+	ATF_REQUIRE_MSG(held_fd != -1,
 		"Unable to hold socket, dying jail won't be reproduced");
 	purge_jail(old_jid);
 	ATF_REQUIRE(get_jail_by_jid(old_jid, JAIL_DYING, jail_name) != -1 &&
