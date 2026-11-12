@@ -96,7 +96,8 @@ create_jail(int jid, const char *name, int children_max, int incl_bad_param)
 	int closed, written;
 	FILE *fp;
 
-	snprintf(children_max_str, sizeof(children_max_str), "%d", children_max);
+	snprintf(children_max_str, sizeof(children_max_str), 
+			"%d", children_max);
 	snprintf(jid_str, sizeof(jid_str), "%d", jid);
 
 	if (incl_bad_param)
@@ -302,11 +303,13 @@ fork_check(int parent_jid, int a_jid, int b_jid, int outside_jid)
 		if (errno != EINTR)
 			return (-1);
 	}
-	return (WIFEXITED(stat_loc) && WEXITSTATUS(stat_loc) == EXIT_SUCCESS 
+	return (WIFEXITED(stat_loc) && WEXITSTATUS(stat_loc) == EXIT_SUCCESS
 			? 0 : -1);
 }
 
-/* Retain a jailed socket credential in the host until the returned FD closes. */
+/* Retain a jailed socket credential in the host 
+ * until the returned FD closes. 
+ */
 static int
 held_socket(int jid)
 {
