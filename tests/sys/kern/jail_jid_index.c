@@ -621,7 +621,8 @@ ATF_TC_BODY(dying_jid_reuse, tc)
 	ATF_REQUIRE(get_jail_by_jid(old_jid, JAIL_DYING, jail_name) != -1 &&
 		strcmp(JAIL_NAME("_old"), jail_name) == 0);
 	ATF_REQUIRE(ABSENT_JAIL_BY_JID_0(old_jid));
-	ATF_REQUIRE(create_jail(old_jid, JAIL_NAME("_replacement"), 0, 0) != -1);
+	ATF_REQUIRE(
+		create_jail(old_jid, JAIL_NAME("_replacement"), 0, 0) != -1);
 	renamed_jid = jail_getv(JAIL_DYING, "name", JAIL_NAME("_old"), NULL);
 	ATF_REQUIRE(renamed_jid != old_jid);
 	ATF_REQUIRE(get_jail_by_jid(old_jid, 0, jail_name) != -1 &&
