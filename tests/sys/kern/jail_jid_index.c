@@ -371,7 +371,10 @@ held_socket(int jid)
 	received_fd = -1;
 	error = 0;
 	do {
-		/* recvmsg() updates these fields; restore them before a retry. */
+		/* 
+		 * recvmsg() updates these fields; 
+		 * restore them before a retry. 
+		 */
 		msg_hdr.msg_controllen = sizeof(control.buffer);
 		msg_hdr.msg_flags = 0;
 		n = recvmsg(sv[0], &msg_hdr, 0);
@@ -379,7 +382,10 @@ held_socket(int jid)
 	if (n == -1)
 		error = errno;
 	else {
-		/* Close any extra received rights even if the message is invalid. */
+		/* 
+		 * Close any extra received rights even 
+		 * if the message is invalid. 
+		 */
 		for (cmsg = CMSG_FIRSTHDR(&msg_hdr); cmsg != NULL;
 		    cmsg = CMSG_NXTHDR(&msg_hdr, cmsg)) {
 			size_t len, offset;
