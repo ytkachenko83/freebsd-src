@@ -371,9 +371,9 @@ held_socket(int jid)
 	received_fd = -1;
 	error = 0;
 	do {
-		/* 
-		 * recvmsg() updates these fields; 
-		 * restore them before a retry. 
+		/*
+		 * recvmsg() updates these fields;
+		 * restore them before a retry.
 		 */
 		msg_hdr.msg_controllen = sizeof(control.buffer);
 		msg_hdr.msg_flags = 0;
@@ -382,9 +382,9 @@ held_socket(int jid)
 	if (n == -1)
 		error = errno;
 	else {
-		/* 
-		 * Close any extra received rights even 
-		 * if the message is invalid. 
+		/*
+		 * Close any extra received rights even
+		 * if the message is invalid.
 		 */
 		for (cmsg = CMSG_FIRSTHDR(&msg_hdr); cmsg != NULL;
 		    cmsg = CMSG_NXTHDR(&msg_hdr, cmsg)) {
@@ -451,7 +451,8 @@ wait_absent(int jid)
 	while (!(ABSENT_JAIL_BY_JID(jid, JAIL_DYING))) {
 		clock_gettime(CLOCK_MONOTONIC, &curr);
 		curr_secs = curr.tv_sec + (double)curr.tv_nsec / 1e9;
-		if (curr_secs - start_secs > 10 || nanosleep(&sleep_ts, NULL) < 0)
+		if (curr_secs - start_secs > 10 || 
+			nanosleep(&sleep_ts, NULL) < 0)
 			return (-1);
 	}
 	return (0);
@@ -467,7 +468,9 @@ setup_jails(struct jail_fixture *fixture)
 	for (i = 0; i < BASE_LOOKUP_ATTEMPTS; i++) {
 		fixture->base = rand() % RND_UPPER_BOUND;
 		for (j = 0; j < 8; j++) {
-			if (!(ABSENT_JAIL_BY_JID(fixture->base + j, JAIL_DYING)))
+			if (!(ABSENT_JAIL_BY_JID(
+					fixture->base + j, 
+					JAIL_DYING)))
 				break;
 		}
 		if (j == 8)
