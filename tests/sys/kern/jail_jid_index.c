@@ -451,7 +451,7 @@ wait_absent(int jid)
 	while (!(ABSENT_JAIL_BY_JID(jid, JAIL_DYING))) {
 		clock_gettime(CLOCK_MONOTONIC, &curr);
 		curr_secs = curr.tv_sec + (double)curr.tv_nsec / 1e9;
-		if (curr_secs - start_secs > 10 || 
+		if (curr_secs - start_secs > 10 ||
 			nanosleep(&sleep_ts, NULL) < 0)
 			return (-1);
 	}
@@ -469,7 +469,7 @@ setup_jails(struct jail_fixture *fixture)
 		fixture->base = rand() % RND_UPPER_BOUND;
 		for (j = 0; j < 8; j++) {
 			if (!(ABSENT_JAIL_BY_JID(
-					fixture->base + j, 
+					fixture->base + j,
 					JAIL_DYING)))
 				break;
 		}
@@ -477,13 +477,18 @@ setup_jails(struct jail_fixture *fixture)
 			break;
 	}
 	fixture->parent = create_jail(fixture->base, JAIL_PREFIX, 4, 0);
-	ATF_REQUIRE_MSG(fixture->parent != -1, "parent create_jail: %s", jail_errmsg);
+	ATF_REQUIRE_MSG(fixture->parent != -1, "parent create_jail: %s",
+		jail_errmsg);
 	fixture->a = create_jail(fixture->base + 2, JAIL_NAME(".a"), 0, 0);
 	ATF_REQUIRE_MSG(fixture->a != -1, "create_jail[a]: %s", jail_errmsg);
 	fixture->b = create_jail(fixture->base + 4, JAIL_NAME(".b"), 0, 0);
 	ATF_REQUIRE_MSG(fixture->b != -1, "create_jail[b]: %s", jail_errmsg);
-	fixture->outside = create_jail(fixture->base + 6, JAIL_NAME("_outside"), 0, 0);
-	ATF_REQUIRE_MSG(fixture->outside != -1, "create_jail[outside]: %s", jail_errmsg);
+	fixture->outside = create_jail(
+		fixture->base + 6,
+		JAIL_NAME("_outside"),
+		0, 0);
+	ATF_REQUIRE_MSG(fixture->outside != -1, "create_jail[outside]: %s",
+		jail_errmsg);
 }
 
 static void
