@@ -26,6 +26,7 @@ ATF_TESTS_C+=	jail_lookup_root
 ATF_TESTS_C+=	jail_thread
 ATF_TESTS_C+=	jaildesc
 ATF_TESTS_C+=	jail_jid_index
+TEST_METADATA.jail_jid_index+=	is_exclusive="true"
 ATF_TESTS_C+=	inotify_test
 ATF_TESTS_C+=	kill_zombie
 .if ${MK_OPENSSL} != "no"
@@ -86,7 +87,6 @@ TEST_METADATA.sigsys+=	is_exclusive="true"
 
 ATF_TESTS_SH+=	coredump_phnum_test
 ATF_TESTS_SH+=	logsigexit_test
-TEST_METADATA.jail_jid_index+=	is_exclusive="true"
 ATF_TESTS_SH+=	jailmeta
 ATF_TESTS_SH+=	sonewconn_overflow
 TEST_METADATA.sonewconn_overflow+=	required_programs="python"
