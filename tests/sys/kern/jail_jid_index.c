@@ -526,7 +526,8 @@ cleanup_journal(void)
 		return;
 
 		io_error:
-		ATF_CHECK_MSG(0, "Unable to read jid tracker - %s", TEST_JID_FILE);
+		ATF_CHECK_MSG(0, "Unable to read jid tracker - %s", 
+			TEST_JID_FILE);
 		fclose(fp);
 	}
 }
@@ -603,12 +604,17 @@ ATF_TC_BODY(enumeration_after_removal, tc)
 	struct jail_fixture fixture;
 
 	setup_jails(&fixture);
-	ATF_REQUIRE(create_jail(fixture.base + 1, JAIL_NAME("_failed"), 0, 1) == -1);
+	ATF_REQUIRE(create_jail(
+		fixture.base + 1, 
+		JAIL_NAME("_failed"), 
+		0, 1) == -1);
 	ATF_REQUIRE(wait_absent(fixture.base + 1) == 0);
 	purge_jail(fixture.a);
 	ATF_REQUIRE(wait_absent(fixture.a) == 0);
 	ATF_REQUIRE(get_jail_by_lastjid(fixture.a, 0, NULL) == fixture.b);
-	ATF_REQUIRE(get_jail_by_lastjid(fixture.base + 1, 0, NULL) == fixture.b);
+	ATF_REQUIRE(get_jail_by_lastjid(
+		fixture.base + 1, 
+		0, NULL) == fixture.b);
 }
 ATF_TC_CLEANUP(enumeration_after_removal, tc)
 {
