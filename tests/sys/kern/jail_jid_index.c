@@ -513,8 +513,10 @@ cleanup_journal(void)
 			if (fseek(fp, offset, SEEK_SET) != 0 ||
 				fread(&jid, sizeof(jid), 1, fp) != 1)
 				goto io_error;
-			if (jid > -1 && jail_remove(jid) != 0 && errno != ENOENT) {
-				ATF_CHECK_MSG(0, "jail_remove(%d): %s", jid, strerror(errno));
+			if (jid > -1 && jail_remove(jid) != 0 &&
+				errno != ENOENT) {
+				ATF_CHECK_MSG(0, "jail_remove(%d): %s", jid,
+					strerror(errno));
 				failed = 1;
 			}
 		}
@@ -553,7 +555,9 @@ ATF_TC_BODY(lookup_enumeration, tc)
 		"get_jail[a]: %s", jail_errmsg);
 	ATF_REQUIRE(strcmp(JAIL_NAME(".a"), jail_name) == 0);
 	ATF_REQUIRE(ABSENT_JAIL_BY_JID_0(fixture.base + 1));
-	ATF_REQUIRE(get_jail_by_lastjid(fixture.base + 1, 0, NULL) == fixture.a);
+	ATF_REQUIRE(get_jail_by_lastjid(
+		fixture.base + 1,
+		0, NULL) == fixture.a);
 	ATF_REQUIRE(get_jail_by_lastjid(fixture.a, 0, NULL) == fixture.b);
 	ATF_REQUIRE(NO_JAIL_LOOKUP_OVERFLOW);
 	jids = walk_jails(-1, 0);
