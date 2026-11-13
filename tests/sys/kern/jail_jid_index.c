@@ -20,6 +20,7 @@
 
 #define BASE_LOOKUP_ATTEMPTS 100
 #define RND_UPPER_BOUND	     400000
+#define JAILS_SLOT_SIZE      8
 #define TEST_JID_FILE	     "jail_jid_test.lst"
 #define JAIL_PREFIX	     "jail_jid"
 #define JAIL_NAME(suffix)    JAIL_PREFIX suffix
@@ -437,15 +438,17 @@ setup_jails(struct jail_fixture *fixture)
 	srand((unsigned)time(NULL));
 
 	for (i = 0; i < BASE_LOOKUP_ATTEMPTS; i++) {
-		fixture->base = rand() % RND_UPPER_BOUND;
-		for (j = 0; j < 8; j++) {
+		fixture->base = rand() % RND_UPPER_BOUND + 1;
+		for (j = 0; j < JAILS_SLOT_SIZE; j++) {
 			if (!(ABSENT_JAIL_BY_JID(fixture->base + j,
 				JAIL_DYING)))
 				break;
 		}
-		if (j == 8)
+		if (j == JAILS_SLOT_SIZE)
 			break;
 	}
+	ATF_REQUIRE_MSG(i != BASE_LOOKUP_ATTEMPTS,
+		"unable to find slot of %d consecutive unassigned jids", JAILS_SLOT_SIZE);
 	fixture->parent = create_jail(fixture->base, JAIL_PREFIX, 4, 0);
 	ATF_REQUIRE_MSG(fixture->parent != -1, "parent create_jail: %s",
 	    jail_errmsg);
